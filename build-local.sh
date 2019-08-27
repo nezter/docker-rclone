@@ -34,9 +34,26 @@ for docker_arch in amd64 arm32v6 arm64v8; do
     # Build
     if [ "$EUID" -ne 0 ]; then
         sudo docker build -f Dockerfile.${docker_arch} -t lucashalbert/docker-rclone:${docker_arch}-${rclone_ver} .
-        #sudo docker push lucashalbert/docker-rclone:${docker_arch}-${rclone_ver}
+        sudo docker push lucashalbert/docker-rclone:${docker_arch}-${rclone_ver}
     else
-        docker build -f Dockerfile.${docker_arch} -t lucashalbert/docker-rclone:${docker_arch}-${rclone_var} .
-        #docker push lucashalbert/docker-rclone:${docker_arch}-${rclone_ver}
+        docker build -f Dockerfile.${docker_arch} -t lucashalbert/docker-rclone:${docker_arch}-${rclone_ver} .
+        docker push lucashalbert/docker-rclone:${docker_arch}-${rclone_ver}
     fi
+done
+
+
+for docker_arch in amd64 arm32v6 arm64v8; do
+    case ${docker_arch} in
+        amd64   ) image_arch="amd64" ;;
+        arm32v6 ) image_arch="arm" ;;
+        arm64v8 ) image_arch="arm64" image_variant="armv8" ;;
+    esac
+
+    # Create arch/ver docker manifest
+    DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create lucashalbert/docker-rclone:${docker_arch}-${rclone_ver} lucashalbert/docker-rclone:${docker_arch}-${rclone_ver}
+    DOCKER_CLI_EXPERIMENTAL=enabled docker manifest annotate lucashalbert/docker-rclone:${docker_arch}-${rclone_ver} lucashalbert/docker-rclone:${docker_arch}-${rclone_ver} --os linux --arch ${image_arch}
+    #DOCKER_CLI_EXPERIMENTAL=enabled docker manifest annotate lucashalbert/docker-rclone:latest lucashalbert/docker-rclone:${docker_arch}-${rclone_ver} --os linux --arch ${image_arch}
+
+    # Push arch/ver docker manifest
+    DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push lucashalbert/docker-rclone:${docker_arch}-${rclone_ver}
 done
